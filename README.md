@@ -36,6 +36,10 @@ docker build --platform linux/arm64 -t ghcr.io/autorunhq/switch-dev .
 
 To change a revision, edit its `ARG` in the `Dockerfile`.
 
+Pushing a tag such as `2026.09` builds the image on GitHub's arm64 runner and
+publishes it as `ghcr.io/autorunhq/switch-dev:2026.09` and `:latest`
+(`.github/workflows/publish.yml`).
+
 ## Licenses
 
 The Dockerfile and build scripts are MIT. What the image builds keeps its own
