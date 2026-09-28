@@ -1,5 +1,6 @@
-# Build the image for linux/arm64 and publish it to ghcr.io/autorunhq/switch-dev
-# under the pushed tag, the date it is cut (such as 2026.09.28), and latest.
+# Build the image for linux/amd64 and linux/arm64, each on its own runner, and
+# publish both under one tag to ghcr.io/autorunhq/switch-dev: the pushed tag,
+# the date it is cut (such as 2026.09.28), and latest.
 name: publish
 on:
   push:
@@ -12,9 +13,19 @@ on:
 permissions:
   contents: read
   packages: write
+env:
+  IMAGE: ghcr.io/autorunhq/switch-dev
+  TAG: ${{ inputs.tag || github.ref_name }}
 jobs:
-  image:
-    runs-on: ubuntu-24.04-arm
+  build:
+    strategy:
+      matrix:
+        include:
+          - platform: linux/amd64
+            runner: ubuntu-24.04
+          - platform: linux/arm64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
     timeout-minutes: 180
     steps:
       - uses: actions/checkout@v7
@@ -24,11 +35,39 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - uses: docker/build-push-action@v7
+      # Pushed by digest only; the merge job below names them.
+      - id: build
+        uses: docker/build-push-action@v7
         with:
           context: .
-          platforms: linux/arm64
-          push: true
-          tags: |
-            ghcr.io/autorunhq/switch-dev:${{ inputs.tag || github.ref_name }}
-            ghcr.io/autorunhq/switch-dev:latest
+          platforms: ${{ matrix.platform }}
+          outputs: type=image,name=${{ env.IMAGE }},push-by-digest=true,name-canonical=true,push=true
+      - run: |
+          mkdir -p /tmp/digests
+          digest='${{ steps.build.outputs.digest }}'
+          touch "/tmp/digests/${digest#sha256:}"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: digest-${{ matrix.runner }}
+          path: /tmp/digests/*
+          retention-days: 1
+  publish:
+    needs: build
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: digest-*
+          path: /tmp/digests
+          merge-multiple: true
+      - uses: docker/setup-buildx-action@v4
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - working-directory: /tmp/digests
+        run: |
+          docker buildx imagetools create -t "$IMAGE:$TAG" -t "$IMAGE:latest" \
+              $(printf "$IMAGE@sha256:%s " *)
+          docker buildx imagetools inspect "$IMAGE:$TAG"

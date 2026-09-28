@@ -30,7 +30,8 @@ and so do the image's labels.
 docker run --rm -v "$PWD:/work" ghcr.io/autorunhq/switch-dev make
 ```
 
-The image is built for `linux/arm64`.
+The image is built for `linux/amd64` and `linux/arm64`, each natively on its
+own runner.
 
 ## Build
 
@@ -41,7 +42,7 @@ docker build --platform linux/arm64 -t ghcr.io/autorunhq/switch-dev .
 To change a revision, edit its `ARG` in the `Dockerfile`.
 
 Pushing a tag named for the day it is cut, such as `2026.09.28`, builds the
-image on GitHub's arm64 runner and publishes it as
+image on GitHub's amd64 and arm64 runners and publishes it as
 `ghcr.io/autorunhq/switch-dev:2026.09.28` and `:latest`
 (`.github/workflows/publish.yml`).
 
