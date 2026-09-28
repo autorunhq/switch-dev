@@ -54,6 +54,14 @@ RUN git clone https://github.com/SciresM/hactool.git /tmp/hactool \
     && rm -rf /tmp/hactool
 
 # --- libnx ---------------------------------------------------------------------
+# devkitPro's released libnx stays in /opt/devkitpro-release, beside the same
+# toolchain, for projects that pin it: Atmosphere builds only against that
+# release's API. Build them with DEVKITPRO=/opt/devkitpro-release.
+RUN mkdir /opt/devkitpro-release \
+    && for entry in /opt/devkitpro/*; do \
+           [ "$(basename "$entry")" = libnx ] || ln -s "$entry" /opt/devkitpro-release/; \
+       done \
+    && cp -a /opt/devkitpro/libnx /opt/devkitpro-release/libnx
 RUN git init -q /tmp/libnx \
     && git -C /tmp/libnx fetch -q --depth 1 https://github.com/switchbrew/libnx.git ${LIBNX_REVISION} \
     && git -C /tmp/libnx checkout -q FETCH_HEAD \

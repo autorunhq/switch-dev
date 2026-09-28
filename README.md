@@ -15,6 +15,10 @@ Tools: CMake, Ninja, Meson 1.12, glslang, SPIRV-Tools 1.3.290, LLVM/Clang 15,
 Rust `nightly-2026-09-08` with rust-src, bindgen and cbindgen, and hactool
 1.4.0.
 
+`/opt/devkitpro-release` is the same toolchain with devkitPro's released
+libnx (4.12.0), for projects pinned to it such as Atmosphère: build them with
+`DEVKITPRO=/opt/devkitpro-release`.
+
 `/opt/devkitpro/cmake/switch-dev.cmake` is the CMake toolchain lsfg-vk and
 libusbhsfs are built with. It leaves x18 alone, as Wine on Horizon needs.
 `/opt/devkitpro/portlibs/switch/share/switch-dev.json` lists the revisions,
