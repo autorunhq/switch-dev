@@ -13,7 +13,7 @@ FROM ${DEVKITA64}
 
 ARG LIBNX_REVISION=146c3d1446d35546943c7b6cfcd479bc1f5e9b67
 ARG MESA_SWITCH_REPOSITORY=https://github.com/danfromtico/mesa-switch.git
-ARG MESA_SWITCH_REVISION=0d9d4f0898c85f2bb43ed60f1ea75d1ffb7b9c2b
+ARG MESA_SWITCH_REVISION=e008cab04139d66942d1c85e6b3e8b36cdf1334e
 ARG LSFG_VK_REVISION=8b0da2661c6f3473a7fccc8ba643880050e71642
 ARG LIBUSBHSFS_REVISION=625269b7725a6e2a3f2724e8d45b602c1b20ead5
 ARG SPIRV_TOOLS_TAG=vulkan-sdk-1.3.290.0
@@ -61,12 +61,11 @@ RUN git init -q /tmp/libnx \
     && rm -rf /tmp/libnx
 
 # --- mesa-switch ---------------------------------------------------------------
-# It replaces devkitPro's Mesa 20.1. Its Horizon backend is written against
-# libnx and links no libdrm_nouveau, but its OpenGL winsys still compiles
-# against switch-libdrm_nouveau's headers (nouveau.h's five-argument
-# nouveau_device_new and nouveau_bo_get_syncpoint), so that package stays.
+# It replaces devkitPro's Mesa 20.1 and the libdrm_nouveau that went with it:
+# its Horizon backend is written against libnx, and the libdrm_nouveau API its
+# OpenGL winsys implements comes with its own copy of the headers.
 COPY mesa/build.sh /usr/local/share/switch-dev/mesa-build.sh
-RUN dkp-pacman -Rdd --noconfirm switch-mesa \
+RUN dkp-pacman -Rdd --noconfirm switch-mesa switch-libdrm_nouveau \
     && git init -q /tmp/mesa-switch \
     && git -C /tmp/mesa-switch fetch -q --depth 1 ${MESA_SWITCH_REPOSITORY} ${MESA_SWITCH_REVISION} \
     && git -C /tmp/mesa-switch checkout -q FETCH_HEAD \

@@ -9,10 +9,8 @@ portlibs=/opt/devkitpro/portlibs/switch
 # What mesa-switch's build-switch.sh sets up in its container: the cross
 # wrappers for bindgen and rustc, the Nouveau header NAK's bindgen reads, the
 # Clang header path mesa_clc uses, and placeholder libdl, librt and libutil
-# for Rust std (rust_switch_stubs.c has the symbols). Not the checkout's DRM
-# nouveau.h: the Switch OpenGL winsys is written against switch-libdrm_nouveau's
-# (its five-argument nouveau_device_new and nouveau_bo_get_syncpoint), though
-# nothing links that library.
+# for Rust std (rust_switch_stubs.c has the symbols). The Switch OpenGL winsys
+# carries the libdrm_nouveau headers it implements, so none are installed.
 mkdir -p /usr/local/libexec
 cp bindgen-switch-wrapper.sh /usr/local/libexec/bindgen
 cp rustc-switch-wrapper.sh /usr/local/libexec/rustc
