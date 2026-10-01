@@ -33,7 +33,13 @@ meson setup $tools \
     -Dglx=disabled -Degl=disabled -Dopengl=false -Dgles1=disabled -Dgles2=disabled \
     -Dtools=[] -Dllvm=enabled -Dmesa-clc=enabled -Dprecomp-compiler=enabled -Dinstall-mesa-clc=true
 ninja -C $tools src/compiler/clc/mesa_clc src/compiler/spirv/vtn_bindgen2
-export PATH="/usr/local/libexec:$tools/src/compiler/clc:$tools/src/compiler/spirv:$PATH"
+export PATH="$tools/src/compiler/clc:$tools/src/compiler/spirv:$PATH"
+# Rust for the Switch is AArch64 ELF whatever machine builds the image: the
+# cross file's rustc wrapper takes its target from here, and without one it
+# compiles for the build machine, which on amd64 put x86-64 objects in
+# libvulkan.a. The wrapper stays out of PATH, so Mesa's proc-macro crates
+# (native: true) are built by the real rustc for the machine they run on.
+export MESA_SWITCH_RUST_TARGET=aarch64-unknown-linux-gnu
 
 # build-opengl.sh's EGL/OpenGL options with build-switch.sh's NVK.
 meson setup /tmp/mesa-build \
@@ -80,6 +86,12 @@ awk '/^Archive index:/ { index_ = 1; next } /^$/ { if (index_) exit }
      index_ && /4core9panicking9panic_fmt / { found = 1 } END { exit !found }' /tmp/vulkan-armap ||
     { echo 'libvulkan.a has no index for Rust core' >&2; exit 1; }
 rm /tmp/vulkan-armap
+# And every object in it, the Rust ones included, is AArch64.
+mkdir /tmp/vulkan-members && (cd /tmp/vulkan-members && aarch64-none-elf-ar x $portlibs/lib/libvulkan.a)
+wrong="$(cd /tmp/vulkan-members && for o in *.o; do
+    readelf -h "$o" | grep -q 'Machine:.*AArch64' || echo "$o"; done | head -5)"
+rm -rf /tmp/vulkan-members
+[ -z "$wrong" ] || { echo "libvulkan.a has objects that are not AArch64: $wrong" >&2; exit 1; }
 # A program builds against portlibs alone, Vulkan headers included.
 cp -r include/vulkan include/vk_video $portlibs/include/
 mkdir -p $portlibs/share/licenses/mesa-switch

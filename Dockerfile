@@ -41,9 +41,11 @@ RUN git clone --depth 1 --branch ${SPIRV_TOOLS_TAG} https://github.com/KhronosGr
         -DCMAKE_INSTALL_PREFIX=/usr/local -DSPIRV_SKIP_TESTS=ON \
     && ninja -C /tmp/spirv-tools/build install \
     && rm -rf /tmp/spirv-tools
-# NAK, NVK's shader compiler, is Rust: nightly with rust-src for -Zbuild-std.
+# NAK, NVK's shader compiler, is Rust: nightly with rust-src, and the AArch64
+# ELF target's std, which Switch code is compiled for on an amd64 machine too.
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal \
         --default-toolchain ${RUST_TOOLCHAIN} --component rust-src \
+        --target aarch64-unknown-linux-gnu \
     && cargo install --locked bindgen-cli@0.73.2 cbindgen@0.29.4 \
     && rm -rf /root/.cargo/registry /root/.cargo/git
 RUN git clone https://github.com/SciresM/hactool.git /tmp/hactool \
